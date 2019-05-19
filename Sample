@@ -1,0 +1,104 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace ExamScheduler
+{
+    class Database
+    {
+        private SqlConnection conn;
+        private string connectionString = "Server=.\\SQLEXPRESS;Database=ExamSchedular;Integrated Security=true;";
+
+        private static Database db;
+
+        private Database()
+        {
+            
+        }
+
+        public static Database getDB()
+        {
+            if (db == null)
+            {
+                db = new Database();
+                if (!db.initConn())
+                {
+                    MessageBox.Show("Could not connect to database. Make sure database is available and server is online.", "Database Not Available", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Application.Exit();
+                }
+            }
+            return db;
+        }
+
+        public bool initConn()
+        {
+            conn = new SqlConnection(connectionString);
+            try
+            {
+                conn.Open();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        
+        //All about rooms
+        public int addRoom(string roomName)
+        {
+            string insertQuery = string.Format("INSERT INTO rooms (location) VALUES ('{0}');",roomName);
+            SqlCommand cmd = new SqlCommand(insertQuery, conn);
+            return cmd.ExecuteNonQuery();
+        }
+
+        public bool removeRoom(int id)
+        {
+            string insertQuery = string.Format("DELETE FROM rooms WHERE id = {0};", id);
+            SqlCommand cmd = new SqlCommand(insertQuery, conn);
+            try
+            {
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public LinkedList<Room> getRoomsList()
+        {
+            LinkedList<Room> list = new LinkedList<Room>();
+
+            string insertQuery = "SELECT id,location FROM rooms";
+            SqlCommand cmd = new SqlCommand(insertQuery, conn);
+            SqlDataReader reader = cmd.ExecuteReader();
+            Room newRoom;
+            while (reader.Read())
+            {
+                newRoom = new Room(reader.GetInt32(0), reader.GetString(1));
+                list.AddLast(newRoom);
+            }
+            reader.Close();
+            return list;
+        }
+
+        public bool removeAllRooms()
+        {
+            string insertQuery = "DELETE FROM rooms;";
+            SqlCommand cmd = new SqlCommand(insertQuery, conn);
+            try
+            {
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
